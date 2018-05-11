@@ -89,10 +89,46 @@ first,second,third = 'first','second','third'
 one,*two = 'one','1','2','3'#带星号的表达式会获取序列的剩余部分，是个列表
 >>>two
 >>>['1','2','3']
-one,*two,thred = 1,2,2,3#带星号的表达式会获取中间部分，是个列表　
+one,*two,thred = 1,2,2,3#带星号的表达式会获取中间部分，是个列表.tow的value是[2,2]　
 ```
 
 #### 字典
 
+字典推导式同样的高效、简短、整洁。
 
+```pytho
+>>>{number: None for number in range(6)}
+{0: None, 1: None, 2: None, 3: None, 4: None, 5: None}
+```
+
+
+
+**注意点**：字典的keys()、values()和items()这3个方法在Python3中返回视图对象(view objects)
+
+* keys():返回dict_keys对象，可以查看字典所有的key。
+* values():返回dict_values对象，可以查看字典所有的value。
+* items():返回dict_items对象，可以查看字典所有的(key,value)二元元组。
+
+*view objects可以动态的查看字典内容，见下例：*
+
+```python
+>>>words = {'foo':'bar'}#创建一个字典
+>>>items = words.items()＃使用items()方法
+>>>words['span'] = 'eggs'＃对原字典添加了key:value
+>>>items#查看items，内容动态的跟着变化了
+dict_items([('spam','egg'),('foo','bar')])
+```
+
+字典操作复杂度：
+
+![dict_page1](/Users/neilyo/Documents/读书笔记/Python高级编程/dict_page1.jpeg)
+
+**注意点：**
+
+* 字典的3个基本操作（添加元素，获取元素，删除元素）的最坏情况复杂度的n,n是当前字典元素的个数。
+* 复制与遍历字典的操作，其中n是字典增加达到的最大元素数目，而不是当前元素个数，如果对字典修改很大且要频繁遍历某个字典，最好重新创建一个新的字典对象。
+
+字典的元素是无序的，与对象的散列方法、添加顺序都无关。
+
+某些情况下，如果要使用能够保存添加顺序的字典，使用**collections模块下的OrderedDict**,其有一些其他功能，例如使用popitem()方法双端取出元素，使用move_to_end()方法将指定元素移动互某一端，详细功能见官方文档。
 
