@@ -50,9 +50,9 @@ str,bytes都是不可变序列，微小的改变也需要重新创建一个新�
 
 list是对其他对象引用组成的连续数组，不是链表，由于算法复杂度的不同，对于需要真正的链表的场景(双端append和pop复杂度为O(1)的数据结构)，**使用内置collections模块中的deque双端队列**。
 
-![16e3576217fc700abb68a98271fe910ef02dae6b](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/list_page1.jpeg)
+![16e3576217fc700abb68a98271fe910ef02dae6b](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/images/list_page1.jpeg)
 
-![16e3576217fc700abb68a98271fe910ef02dae6b-2](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/list_page2.jpeg)
+![16e3576217fc700abb68a98271fe910ef02dae6b-2](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/images/list_page2.jpeg)
 
 **列表操作，当要进行列表操作时候，尽量使用列表推导，更高效简洁**
 
@@ -121,7 +121,7 @@ dict_items([('spam','egg'),('foo','bar')])
 
 字典操作复杂度：
 
-![dict_page1](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/dict_page1.jpeg)
+![dict_page1](https://raw.githubusercontent.com/Python2K/expert-python-programming-notes/master/images/dict_page1.jpeg)
 
 **注意点：**
 
