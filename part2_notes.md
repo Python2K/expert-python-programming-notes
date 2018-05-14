@@ -132,3 +132,87 @@ dict_items([('spam','egg'),('foo','bar')])
 
 某些情况下，如果要使用能够保存添加顺序的字典，使用**collections模块下的OrderedDict**,其有一些其他功能，例如使用popitem()方法双端取出元素，使用move_to_end()方法将指定元素移动互某一端，详细功能见官方文档。
 
+#### 集合
+
+* set():是一种可变的、无序的、有限的集合，其**元素**是唯一的，不可变（可哈希的）对象。
+* frozenset():是一种不可变的、无序的、可哈希的的集合，其**元素**是唯一的，不可变（可哈希的）对象。
+
+frozenset()因为具有不可变性，所有可以作为字曲的键，在set或者frozenset中不可以再包含set（会引发Type错误），但是可以包含frozenset。
+
+三种创建集合方式:
+
+1. set([1,2,3])
+2. {1,2,3}
+3. {element for element in range(3)}
+
+**注意**：创建空集合不能使用｛｝，那样是字典，形式上与字典很像，注意区分。
+
+**更多选择**:基本类型是（列表、元组、字典、集合），collections模块提供了更多的选择
+
+* namedtuple():用于创建元组子类的工厂函数，可以通过属性我来访问它的元素索引;
+* deque:双端队列，类似列表，是栈和队列的一般化，可以在两端快速添加取出元素;
+* ChainMap:类似字典的类，用于创建多个映射的单一视图;
+* Counter：字典子类，可对可哈希对象进行计数;
+* OrderedDict：字典子类，可以保存元素的添加顺序;
+* defaultdict:字典子类，可以通过调用用户自定义的工厂函数来设置缺失值。
+
+---
+
+#### 高级语法
+
+* 迭代器（iterator）
+* 生成器（generator)
+* 装饰器（decorator）
+* 上下文管理器（context　manager）
+
+#### 迭代器
+
+实现了迭代器协议的容器对象的就是迭代器（对象有2个方法\__next__与\__iter__)，其中__\__next__中返回下一个元素直到raise StopIteration，\__iter__返回迭代器自身。
+
+#### 生成器yield
+
+生成器提供了优雅的语法，生成器可以暂停函数并返回一个中间结果，在必要时可以恢复。
+
+生成器是一个特殊的迭代器。
+
+标准库tokenize模块可以从文本流中生成token,并对处理过的每一行都返回一个迭代器，以供后续处理：
+
+```py
+import tokenize
+>>> reader = open('hello').readline
+>>> tokens = tokenize.generate_tokens(reader)
+>>>next(tokens)＃可以每次next返回TokenInfo对象，对整个文件进行了遍历
+```
+
+**保持代码简单，而不是数据简单，**最好编写多个处理序列值的简单可迭代函数，而不是编写一个复杂函数，同时计算出整个集合的结果。
+
+**生成器的一个重要的特性**:可以利用next函数与调用的代码进行交互，yield变成了一个表达式，而值可以通过send方法来传递：以下是示例
+
+```pyth
+def ps():
+	print('haha')
+	while True:
+	answer = (yield) #表达式
+	if answer is None:
+		print('None')
+	elif answer.endswith('?'):
+		print('>>>???')
+
+p = ps()
+next(p)
+>>> haha
+p.send('what?')#将函数内answer传值为“what？”，变成yield的返回值
+>>> >>>???
+```
+
+这个函数还可以根据客户端的代码来改变自身的行为，添加了另外2个函数，throw和close
+
+* throw 允许客户端代码发送要抛出的任何类型的异常
+* close　作用与throw相同，但会引发特定的异常－－GeneratorExit,在这种情况下，生成器函数必须再次引发GeneratorExit或StopIteration
+
+**生成器是Python中协和、异步并发等其他概念的基础，后面会介绍**
+
+
+
+
+
