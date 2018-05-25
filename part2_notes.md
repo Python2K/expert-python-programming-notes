@@ -309,8 +309,51 @@ def function_with_important_docstring():
 '这里是我想保存的重要文档'
 ```
 
+---
+
 **装饰器的用法和有用的例子**
 常见的装饰器模式：参数检查、缓存、代理、上下文提供者
+
+**1. 参数检查，可以写一个装饰器，来检查使用的函数的参数是否是指定的类型！！！**
+
+```python
+rpc_info = {}
+def xmlrpc(in_=(), out=(type(None),)):
+    def _xmlrpc(function):
+        #注册签名
+        func_name = function.__name__
+        rpc_info[func_name] = (in_,out)
+        def _check_types(elements,types):
+            """用来检查类型的子函数"""
+            if len(elements) != len(types):
+                raise TypeError('argument count is wrong')
+            typed = enumerate(zip(elements,types))
+            for index,couple in typed:
+                arg,of_the_right_type = couple
+                if isinstance(arg,of_the_right_type):
+                    continue
+                raise TypeError('arg #%d should be %s' % (index,of_the_right_type))
+
+        def __xmlrpc(*args):  # 没有允许的关键词
+            # 检查输入的内容
+            checkable_args = args[1:]
+            _check_types(checkable_args, in_)
+            # 运行函数
+            res = function(*args)
+            if not type(res) in (tuple,list):
+                checkable_res = (res,)
+            else:
+                checkable_res = res
+            _check_types(checkable_res,out)
+                #函数及其类型检查成功
+            return res
+        return __xmlrpc
+    return _xmlrpc
+```
+
+---
+
+**2. 缓存装饰器**
 
 
 
