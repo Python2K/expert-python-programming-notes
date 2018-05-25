@@ -177,18 +177,18 @@ frozenset()因为具有不可变性，所有可以作为字曲的键，在set或
 
 标准库tokenize模块可以从文本流中生成token,并对处理过的每一行都返回一个迭代器，以供后续处理：
 
-```py
+```python
 import tokenize
 >>> reader = open('hello').readline
 >>> tokens = tokenize.generate_tokens(reader)
->>>next(tokens)＃可以每次next返回TokenInfo对象，对整个文件进行了遍历
+>>>next(tokens)＃可以每次next返回TokenInfo对象
 ```
 
 **保持代码简单，而不是数据简单，**最好编写多个处理序列值的简单可迭代函数，而不是编写一个复杂函数，同时计算出整个集合的结果。
 
 **生成器的一个重要的特性**:可以利用next函数与调用的代码进行交互，yield变成了一个表达式，而值可以通过send方法来传递：以下是示例
 
-```pyth
+```Python
 def ps():
 	print('haha')
 	while True:
@@ -211,6 +211,106 @@ p.send('what?')#将函数内answer传值为“what？”，变成yield的返回�
 * close　作用与throw相同，但会引发特定的异常－－GeneratorExit,在这种情况下，生成器函数必须再次引发GeneratorExit或StopIteration
 
 **生成器是Python中协和、异步并发等其他概念的基础，后面会介绍**
+
+
+
+#### 装饰器
+
+1. 作为一个函数，通用模式
+
+```python
+def medecorator(function):
+	def wrapped(*args,**kwargs):
+		#在调用原始函数之前，加工做点什么
+		result = function(*args,**kwargs)
+		#在函数调用后做点什么
+		#并返回结果
+		return result
+	return wrapped
+
+```
+
+2. 作为一个类，装饰器几乎总是用函数实现，但是某些情况下，使用用户自定义类可能更好。
+
+```python
+#非参数化装饰器用作类的通用模式
+class DecoratorAsClass:
+    def __init_(self,fun):
+        self.fun = fun
+    def __call__(self,*args,**kwargs):
+        #在调用原始函数之前，做点什么
+        result = self.fun(*args,**kwargs)
+        #在调用函数之后，做点什么，
+        #返回结果
+        return result 
+```
+
+3. 参数化的装饰器
+
+当一个装饰器需要参数，那么对于函数装饰器再包装一层即可，很简单：
+
+```python
+def repeat(number=3)#参数默认值为3
+	def actual_decorator(func):
+        result = None
+        def wrapper(*args, **kwargs):
+            for _ in range(number):
+                result = func(*args,**kwargs):
+            return result
+        return wrapper
+    return actual_decorator
+
+```
+
+**注意，参数化的装饰器即使有默认值，使用时也需要带括号@repeat()**
+
+4. 保存内省的装饰器
+
+使用装饰器常见错误是在使用装饰器时不保存函数的元数据（主要是文档字符串和原始函数名），这样会导致调试装饰过的函数更加困难，也会破坏可能用到的多大多数自动生成文档的工具。
+
+例子说明
+
+```python
+def dummy_decorator(func):
+    def wrapped(*args,**kwargs):
+        '''包装函数内部的文档'''
+        return func(*args,**kwargs)
+    return wrapped
+>>>下面是使用例子
+@dummy_decorator
+def function_with_important_docstring():
+    '''这里是想要保存的重要文档'''
+
+>>>function_with_important_docstring().__name__#显示wrapped函数名
+'wrapped'
+>>>function_with_important_docstring().__doc__#显示了包装函数的内部文档，并没有保存“想要保存的重要文档”
+'包装函数内部的文档'
+```
+
+**要解决这个问题，使用functools模块中的wraps()装饰器**
+
+```python
+from functools import wraps
+#写装饰器
+def preserving_decorator(func):
+    @wraps(func)
+    def wrapped(*args,**kwargs):
+        '''包装函数的内部文档'''
+        return func(*args,**kwargs)
+    return wrapped
+
+@preserving_decorator
+def function_with_important_docstring():
+    '''这里是我想保存的重要文档'''
+
+>>>function_with_important_docstring().__name__#会正确显示装饰后的函数名元数据
+'function_with_important_docstring'
+>>>function_with_important_docstring().__doc#会正确显示“想要保存的重要文档”
+'这里是我想保存的重要文档'
+```
+
+**装饰器的用法和有用的例子**
+常见的装饰器模式：参数检查、缓存、代理、上下文提供者
 
 
 
