@@ -355,6 +355,57 @@ def xmlrpc(in_=(), out=(type(None),)):
 
 **2. 缓存装饰器**
 
+```python
+import hashlib
+import pickle
+import time
+
+cache = {}#建立一个字典
+
+
+def memoize(duration=10):#参数装饰器，duration持续时间
+    def _memoize(func):
+        def is_obsolete(entry, duration):#判断调用时间是否超过了duration
+            return time.time() - entry['time'] > duration
+
+        def compute_key(func, args, kw):#创建key,使用pickle来建立hash，冻结所有作为参数传入的对象状态的快捷方式
+            key = pickle.dumps((func.__name__, args, kw))
+            return hashlib.sha1(key).hexdigest()
+
+        def __memoize(*args, **kw):
+            key = compute_key(func, args, kw)
+            # 是否已经拥有它了？是否存在于cache内且是否超过duration持续时间
+            if key in cache and not is_obsolete(cache[key], duration):
+                print('we got a winner')
+                return cache[key]['value']
+            # 计算
+            result = func(*args, **kw)
+            # 保存
+            cache[key] = {'value': result, 'time': time.time()}
+            return result
+
+        return __memoize
+
+    return _memoize
+
+
+@memoize()
+def very_complex_stuff(a, b):
+    return a + b
+
+
+very_complex_stuff(2, 2)
+
+very_complex_stuff(2, 2)
+print(cache)
+```
+
+**任何情况下，更高效的装饰器会使用基于高级缓存算法的专用缓存库**
+
+---
+
+**3. 代理**
+
 
 
 
