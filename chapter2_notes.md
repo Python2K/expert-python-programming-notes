@@ -167,7 +167,7 @@ frozenset()因为具有不可变性，所有可以作为字曲的键，在set或
 
 #### 迭代器
 
-实现了迭代器协议的容器对象的就是迭代器（对象有2个方法\__next__与\__iter__)，其中__\__next__中返回下一个元素直到raise StopIteration，\__iter__返回迭代器自身。
+实现了迭代器协议的容器对象的就是迭代器（对象有2个方法\_\__next\_\_与\_\_iter\_\_)，其中__\__next__中返回下一个元素直到raise StopIteration，\_\_iter\_\_返回迭代器自身。
 
 #### 生成器yield
 
@@ -405,6 +405,176 @@ print(cache)
 ---
 
 **3. 代理**
+
+代理装饰器使用全局机制为标记和注册函数，
+
+```python
+class User(object):#定义一个User类，内含规则
+    def __init__(self, roles):
+        self.roles = roles
+
+class Unauthorized(Exception):#自定义一个异常类
+    pass
+
+def protect(role):#role规则参数
+    def _protect(function):
+        def __protect(*args, **kwargs):
+            user = globals().get('user')#获取全局变量user
+            if user is None or role not in user.roles:#如果user为空或者不在规则参数中，返回自定义异常
+                raise Unauthorized('I wont tell you')
+            return function(*args, **kwargs)
+        return __protect
+    return _protect
+```
+
+这一模型常用于python web框架用于定义发布类的安全性
+
+下面是使用示例，当一个用户被保存在一个全局变量中，在方法被访问时装饰器会检查他的角色
+
+```python
+tarek = User(('admin', 'user'))
+bill = User(('user'))
+class MySecret(object):
+    @protect('admin')
+    def waffle_recipe(self):
+        print('use tons of butter')
+        
+>>>these_are = MySecrets()
+>>>user = tarek#全局变量用户user
+>>>these_are.waffle_recipe()
+use tons of butter
+
+>>>user = bill
+>>>these_are.waffle_recipe()
+Traceback(most recent call last)
+File "<stdin>", line 1, in <module>
+File "<stdio>", line 7, in wrap
+__main__.Unauthorized: I wont tell you
+```
+
+---
+
+**4. 上下文提供者**
+
+上下文装饰器确保函数可以运行在正确的上下文中，或者函数前后运行一些代码，它设定并复位一个特定的执行环境。举例，当一个数据项需要在多个线程之间共享时，需要一个锁来保护它避免多次访问，这个锁可以在装饰器中编写，如下：
+
+```python
+def synchronized(func):
+    def _synchronized(*args, **kwargs):
+        lock.acquire()#获取锁
+        try:
+            return func(*args, **kwargs)
+        finally:
+            lock.release()#释放锁
+    return _synchronized
+
+@synchronized
+def thread_safe():#确保锁定资源
+    pass
+```
+
+上下文装饰器经常会被上下文管理器（with语句）替代。
+
+---
+
+**上下文管理器—with语句**
+
+**try…finally**为了即使在出现错误的情况下，也可以执行**某些清理代码**,try…finally很有用，一般使用场景如下：
+
+* 关闭一个文件
+* 释放一个锁
+* 创建一个临时的代码补丁
+* 在特殊环境中运行受保护的代码
+
+with语句一般语法的最简单的形式：
+
+```python
+with context_manager:
+    #代码块
+...
+
+with context_manager as context:#使用as子句保存为局部变量
+    #代码块
+...
+    
+with A() as a,B() as b:#同时使用多个上下文管理器
+...
+```
+
+**ps：下面这部分实际使用场景还不太了解，作个记录**
+
+1. **作为一个类**，任何实现了context manager protocol 的对象都可以用作上下文管理器，该协议包涵了2个特殊方法：\_\_enter\_\_(self),\_\_exit\_\_(self,exc_type,exc_value,traceback)
+
+   with语句的执行过程如下：
+
+   > 调用enter方法，任何返回值都会绑定到指定的as子句
+   >
+   > 执行内部代码块
+   >
+   > 调用exit方法
+
+   exit方法中3个参数：如果没有出现错误，3个参数都被设定为None，出错时，exit不应该重新引发这个错误，详细内容另查。。。。。。
+
+   **以下为一个简单例子，可以说明其工作原理**
+
+   ```python
+   class ContextIllustration:
+       def __enter__(self):#先执行enter方法，如果有返回值，都会绑定到as子句
+           print('entering context')
+       def __exit__(self,exc_type,exc_value,trace_back):
+           print('leaving context')
+           if exc_type is None:#如果没有错误，参数会设定为None
+               print('no error')
+           else:
+               print("with an error {}".format(exc_value))
+              
+   举例个错误情况
+   >>>with ContextIllustration():
+           raise RuntimeError("raised with in 'with")#"raised with in 'with"就是exc_value的值
+   以上会引发异常运行__exit__中的else下面的代码
+   ```
+
+   2. 作为一个函数—contextlib模块
+
+   标准库中有contextlib模块，提供了与上下文管事器一起使用的辅助函数，它最有用的是contextmanager装饰器，可以在一个函数中提供\_\_enter\_\_和\_\_exit\_\_两部分，蹭用yield分开，将ContextIllustration类改写如下：
+
+   ```python
+   from contextlib import contextmanager
+   @contextmanager
+   def context_illustration():
+       print('entering context')
+       try:
+           yield
+       except Exception as e:#如果有异常
+           print('leaving context')
+           print("with an error {}".format(exc_value))
+   		#需要再次抛出异常
+           raise 
+       else:#如果没有异常
+           print('leaving context')
+           print('no error')
+   
+   ```
+
+   ---
+
+   **一些其他语法元素**
+
+   1. for …else语句，解释，当for循环自然结束时，运行else子句，如果在for循环中有break，则不执行else子句。某些情况，当执行完for循环后，需要删除一些“哨兵(sentinel)变量”，如果出现break时用户想要保存信息，可能会需要这些变量，就用的上这种语句了。
+   2. 函数注解：注解并没有被广泛使用
+
+   ```python
+   def f(ham:str, eggs:str = 'eggs') -> str:
+       pass
+   
+   >>>print(f.__annotations__)#注解可以通过__annotations__属性获取，是个字典，在应用运行期间可以获取
+   {'return': <class 'str'>, 'eggs':<class 'str'>, 'ham':<class 'str'>}
+   
+   ```
+
+   
+
+
 
 
 
