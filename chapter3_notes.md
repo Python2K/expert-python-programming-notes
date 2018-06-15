@@ -47,7 +47,7 @@ anita = Sister()
 >>>super(anita.__class__, anita).says()
 ```
 
-***!!!***~~super有个很重要的一点注意，其第二个参数是可选的，如果只提供了一个参数，那么将返回一个unbound类型，这一点在与classmethod一起使用时**特别有用**，以下为示例：~~
+~~!!!super有个很重要的一点注意，其第二个参数是可选的，如果只提供了一个参数，那么将返回一个unbound类型，这一点在与classmethod一起使用时**特别有用**，以下为示例：~~
 
 ```python
 class Pizza:
@@ -72,7 +72,9 @@ class VikingPizza(Pizza):
     !!!!!!以上代码测试不通过，super缺少第二个参数无法调用，查询中。。。。。。
 ```
 
-~~**注意，零参数的super()也可以用于被@classmethod装饰器装饰的方法，无参数调用的super()被看作仅仅定义了第一个参数。**~~划线部分未通过测试，暂时记录。。。。。。
+~~注意，零参数的super()也可以用于被@classmethod装饰器装饰的方法，无参数调用的super()被看作仅仅定义了第一个参数。~~
+
+划线部分未通过测试，暂时记录。。。。。。
 
 如果面对多重继承，super将变的难以使用，理解何时应避免使用super以及**方法解析顺序(method Resolution Order, MRO)在Python中的工作原理十分重要。**
 
