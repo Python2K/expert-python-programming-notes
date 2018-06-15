@@ -349,6 +349,24 @@ def xmlrpc(in_=(), out=(type(None),)):
             return res
         return __xmlrpc
     return _xmlrpc
+
+#使用示例
+
+class RPCView:
+    @xmlrpc((int, int))
+    def meth1(self, int1, int2):
+        print('received %d and %d' % (int1, int2))
+
+    @xmlrpc((str,), (int,))
+    def meth2(self, phrase):
+        print('received %s' % phrase)
+        return 12
+    
+>>># print(rpc_info)
+my = RPCView()
+my.meth1(1, 2)
+
+# my.meth2('jjj')
 ```
 
 ---
