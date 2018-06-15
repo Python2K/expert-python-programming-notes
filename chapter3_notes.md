@@ -175,9 +175,84 @@ PS:这节中说解决这个问题，要么所有基类中添加*args与**kwargs�
 * 如果代码的使用范围包括Python2,那么在Python3中应该显式的集成object。
 * 调用父类时必须查看类的层次结构（\_\_mro\_\_或mro())，为了避免出现任何问题，每次调用父类时，必须快速查看有关的MRO
 
+---
 
+#### 高级属性访问模式
 
+dir(object)可以列出所有属性方法
 
+双下划线\_\_name不应该不应该使用，如果要私有属性，单下划线\_name是习惯做法。
+
+---
+
+#### 描述符
+
+描述符(descriptor)允许自定义在引用一个对象的属性时应该完成的事情。
+
+descriptor是复杂属性访问的基础，它的内部被用于实现property、方法、类方法、静态方法和super类型，它是一个**类**，定义了另外一个类的访问方式。
+
+#### 对象属性控制
+
+> 1. ***\_\_getattribute\_\_****是实例对象查找属性或者方法的入口，实例对象访问属性或方法时都需要调用到此方法。*
+> 2. ***\_\_getattr\_\_(self, name)****可以用来在当用户试图访问一个根本不存在（或者暂时不存在）的属性时，来定义类的行为。当**\_\_getattribute\_\_**方法找不到属性时，最终会调用**\_\_getattr\_\_**方法。它可以用于捕捉错误的以及灵活地处理AttributeError。只有当试图访问不存在的属性时它才会被调用。
+> 3. **\_\_setattr\_\_(self, name, value)****\_\_setattr\_\_**方法允许你自定义某个属性的赋值行为，不管这个属性存在与否，都可以对任意属性的任何变化都定义自己的规则。关于**\_\_setattr\_\_**有两点需要说明：第一，使用它时必须小心，不能写成类似**self.name = “Tom”**这样的形式，因为这样的赋值语句会调用**__setattr__**方法，这样会让其陷入无限递归；第二，你必须区分 ** **对象属性**和 **类属性** 这两个概念。
+> 4. **\_\_delattr\_\_(self, name)**用于处理删除属性时的行为。和**\_\_setattr\_\_**方法要注意无限递归的问题，重写该方法时**不要有类似del self.name的写法**。
+
+以上这几个对象属性控制的方法，具有通用性，也就是说，他控制的是一个对象的所有属性（是一般逻辑），并不能单独控制**单独某一个属性**的行为。
+
+而**描述符**可以单独的抽离出一个属性对象，在属性对象中定义这个属性的查找、设定、删除行为，这个属性对象就是描述符。
+
+---
+
+描述符对象一般是作为其他类对象的属性则存在，描述符**类**基于3个特殊方法，这3个方法组成了descriptor protocol描述符协议。
+
+* \_\_set_\_\(self,obj,type=None)：在设置属性时将调用这一方法;
+* \_\_get\_\_(self,obj,value)：在读取属性时将使用这一方法（被称为getter);
+* \_\_delete\_\_(self,obj)：对属性**调用**del时使用这一方法。
+
+*同时实现了\_\__set_\_\(self,obj,type=None)与\_\_get\_\_(self,obj,value)被称为数据表述符(data descriptor)*
+
+*只实现了\_\_get\_\_(self,obj,value)被称为非数据描述符(non-data descriptor)*
+
+在每次属性查找中，这个协议的方法实际上由对象的特殊方法\_\_getattribute\_\_()调用（不要与\_\_getattr\_\_()弄混，后者用于在前者找不到属性的情况下，才会调用）每次通过instance.attribute或getattr(instance,'attribute')时候，都会隐式的调用\_\_getattribute\_\_(),它按下列顺序查找属性：
+
+1. 验证该属性是否是实例的类对象的数据描述符
+2. 如果不是，就查看该属性是否能在实例对象的\_\_dict\_\_中找到
+3. 最后，查看该属性是否是实例的类对象的非数据描述符
+
+Python官方示例文档
+
+```python
+class RevealAccess(object):
+    """一个数据描述符，正常设定值并返回值，同时打印出记录访问的信息"""
+    def __init__(self,initval=None,name="var"):
+        self.val = initval
+        self.name = name
+    
+    def __get__(self,obj,objtype):
+        print("retrieving",self.name)
+        return self.val
+    
+    def __set__(self,obj,val):
+        print("Updating",self.name)
+        self.val = val
+        
+class MyClass(object):
+    x = RevealAccess(10,'var "x"')
+    y = 5
+    
+>>>m = MyClass()
+>>>m.x
+retrieving var "x"
+>>>print(m.x)
+retrieving var "x"
+10
+>>>m.x = 20
+Updating var "x"
+
+```
+
+上面这个例子，展示了描述符的作用。
 
 
 
