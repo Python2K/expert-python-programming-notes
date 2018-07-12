@@ -469,5 +469,131 @@ class SomeConcreteClass(MixinClass, SomeBaseClass):
 
 混入类设计模式很有用，在django中大量使用，大部分情况下需要依赖多重继承，设计不好会导致麻烦，因为有MRO存在，相对好处理。如果仅是想让代码简单，最好避免多个子类化，这也是类装饰器可以替代混入类的原因。
 
+**使用\_\_new\_\_()方法覆写实例创建过程**
+
+特殊方法new()是负责创建类的实例的特殊的静态方法，无需使用staticmethod装饰器声明。new优先于init方法。
+
+new应该返回instance，如果返回的是其他类的实例，那么将跳过当前类的init。
+
+什么情况下使用\_\_new\_\_()：只有当\_\_init\_\_()不够用时，才有以下几种使用方式
+
+* 当对不可变内置类型进行子类化时-尽量不要使用，对于特定问题，最好搜索其他设计模式，比如工厂方法等。
+* 元类使用\_\_new\_\_()是合理的。
+
+**元类**
+
+所有类定义的基类都是内置的type类。
+
+1. 一般语法：
+
+```python
+def func(self):
+    return 1
+klass = type('MyClass', (objects,), {'method': func})
+
+```
+
+用class 语句来创建的每个类都隐式的使用了type作为其元类，可以在定义class时候添加metaclass关键字来改变其默认行为。
+
+```python
+class ClassWithMetaclass(metaclass=type):
+    pass
+
+metaclass参数值是一个类对象。调用签名为type(name,bases,namespace)!!
+```
+
+* name将保存在\_\_name\_\_为类名
+* Bases这是你类的列表，将成为\_\_bases\_\_属性，并用于构造新创建的类的MRO
+* namespace是类主体定义的命名空间，将映射成\_\_dict\_\_
+
+*元类的常用模板*
+
+```python
+class MetaClass(type):
+    def __new__(mcs, name, bases, namespace):
+        return super().__new__(msc, name, bases, namespace)
+    
+    @classmethod
+    def __prepare__(mcs, name, bases, **kwargs):
+        return super().__prepare__(mcs, name, bases **kwargs)
+    
+    def __init__(cls, name, bases, namespace, **kwargs):
+        super().__init__(name, bases, namepace)
+        
+    def __call__(cls, *args, **kwargs):
+        return super().__caall__(*args, **kwargs)
+    
+    
+```
+
+* \___new\_\_(mcs, name, bases, namespace):复杂类对象的实际创建
+* \__prepare\_\_(mcs, name, bases, **kwargs):这会创建一个空的命令空间对象
+* \__\__init\__\__(cls, name, bases, namespace, **kwargs):这在元类实现中并不常见，一旦new()创建完成，它可以执行其他类对象初始化过程。第一个参数是cls,说明它已经是创建好的类对象（元类的实例），而不是一个元类对象。每个子类都会调用此init,但是类装饰器并不会被子类所调用
+* \_\_call\_\_(cls, *args, **kwargs):当调用元类的实例的时候，会调用call（元类的实例是一个类对象）
+
+**下面的例子说明元类、类、实例的创建过程进行查看**
+
+```python
+class revealingMeta(type):
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        print(mcs, "__new__ called")
+        return super().__new__(mcs, name, bases, namespace, **kwargs)
+
+    @classmethod
+    def __prepare__(mcs, name, bases, **kwargs):#这不能有namespace(attrs),本身他就是创建这么个玩意的
+        print(mcs, "__prepare__ called")
+        return super(revealingMeta,mcs).__prepare__(name, bases, **kwargs)
+
+
+    def __init__(cls, name, bases, namespace, **kwargs):
+        print(cls, "__init__ called")
+        super().__init__(name, bases, namespace,**kwargs)
+
+    def __call__(cls, *args, **kwargs):
+        print(cls, "__call__ called")
+        return super(revealingMeta,cls).__call__(*args, **kwargs)
+
+
+class revealingClass(metaclass=revealingMeta):
+    a = 1
+    def __new__(cls, *args, **kwargs):
+        print(cls, "__new__!!! ---called")
+        return super(revealingClass, cls).__new__(cls,*args,**kwargs)
+
+    def __init__(self):
+        print(self, "__init__ !!!---called")
+        super().__init__()
+
+
+s = revealingClass()
+
+>>>
+<class '__main__.revealingMeta'> __prepare__ called
+<class '__main__.revealingMeta'> __new__ called#先运行Meta类new
+<class '__main__.revealingClass'> __init__ called#定义class时，运行了meta类的init
+<class '__main__.revealingClass'> __call__ called#实例化class时，才会调用meta的call
+<class '__main__.revealingClass'> __new__!!! ---called#调用class的new
+<__main__.revealingClass object at 0x10be9f668> __init__ !!!---called#调用class的init
+```
+
+**元类一般在框架级上使用，比如Django的ORM大量使用了元类**
+
+---
+
+**一般关于代码生成的提示**
+
+1. exec, eval, compile
+
+以上三个内置函数除非完全明白该如何使用，否则别用，会导致安全漏洞！！！
+
+2. AST(abstract syntax tree)抽象语法树
+
+暂时不理解，预留。。。。。。。。
+
+```python
+
+
+```
+
 
 
